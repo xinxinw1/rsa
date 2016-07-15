@@ -1,4 +1,16 @@
-(in-package :rsa)
+(defpackage :rsa-test
+  (:use :common-lisp :lisp-unit :rsa))
+
+(in-package :rsa-test)
+
+(defun list2hash-helper (a tab)
+  (if (null a) tab
+      (let ((k (car a)) (v (cadr a)))
+        (setf (gethash k tab) v)
+        (list2hash-helper (cddr a) tab))))
+
+(defun list2hash (a)
+  (list2hash-helper a (make-hash-table)))
 
 (setq *print-failures* t)
 (setq *print-summary* t)

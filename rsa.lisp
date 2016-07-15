@@ -1,14 +1,16 @@
 (defpackage :rsa
-  (:use :common-lisp :lisp-unit)
-  (:export :real2bin
+  (:use :common-lisp)
+  (:export :coprime
            :gcdcert
            :solve-lin-con
+           :real2bin
            :mod-pow
            :fermat-prime?
            :miller-rabin-prime?
            :prime?
            :random-prime
            :random-coprime
+           :make-rsa-nums
            :make-rsa-keys
            :gen-pqe
            :gen-rsa-keys
@@ -16,17 +18,6 @@
            :decrypt))
 
 (in-package :rsa)
-
-;; Tools Functions
-
-(defun list2hash-helper (a tab)
-  (if (null a) tab
-      (let ((k (car a)) (v (cadr a)))
-        (setf (gethash k tab) v)
-        (list2hash-helper (cddr a) tab))))
-
-(defun list2hash (a)
-  (list2hash-helper a (make-hash-table)))
 
 ;; Helper Functions
 

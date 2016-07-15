@@ -2,8 +2,8 @@
 
 ## Run tests
 
-1. `(load "testing/lisp-unit.lisp")`
-2. `(load "rsa.lisp")`
+1. `(load "rsa.lisp")`
+2. `(load "testing/lisp-unit.lisp")`
 3. `(load "testing/rsa-test.lisp")`
-4. `(in-package :rsa)`
+4. `(in-package :rsa-test)`
 5. `(run-tests :all)`
