@@ -97,6 +97,9 @@
             (assert-true (miller-rabin-prime? n a))
             (assert-false (miller-rabin-prime? n a)))))))
 
+(define-test random-size
+  (assert-equal 300 (length (write-to-string (random-size 300)))))
+
 (define-test make-rsa-nums
   (assert-equal '(19 1099 4307) (make-rsa-nums 59 73 19))
   (assert-equal '(4567 103 9797) (make-rsa-nums 97 101 4567)))
