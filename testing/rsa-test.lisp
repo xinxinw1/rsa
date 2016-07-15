@@ -1,5 +1,8 @@
 (in-package :rsa)
 
+(setq *print-failures* t)
+(setq *print-summary* t)
+
 (define-test real2bin
   (assert-equal '() (real2bin 0))
   (assert-equal '(1) (real2bin 1))
