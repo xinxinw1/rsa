@@ -58,6 +58,27 @@
   (assert-equal 452 (mod-pow 23524 152 1234))
   (assert-equal 100174934273296 (mod-pow 23524235242 11273851274932754 123428357274328)))
 
+(define-test divide-twos
+  (assert-equal '(0 0) (divide-twos 0))
+  (assert-equal '(0 1) (divide-twos 1))
+  (assert-equal '(1 1) (divide-twos 2))
+  (assert-equal '(0 3) (divide-twos 3))
+  (assert-equal '(2 1) (divide-twos 4))
+  (assert-equal '(0 5) (divide-twos 5))
+  (assert-equal '(1 3) (divide-twos 6))
+  (assert-equal '(0 7) (divide-twos 7))
+  (assert-equal '(3 1) (divide-twos 8))
+  (assert-equal '(0 9) (divide-twos 9))
+  (assert-equal '(1 5) (divide-twos 10))
+  (assert-equal '(0 11) (divide-twos 11))
+  (assert-equal '(2 3) (divide-twos 12)))
+
+(define-test lucas-u
+  (assert-equal '(0 1 1 2 3 5 8 13 21 34)
+    (loop for i from 0 to 9 collect (funcall (lucas-u 1 -1) i)))
+  (assert-equal '(0 1 2 5 12 29 70 169 408 985)
+    (loop for i from 0 to 9 collect (funcall (lucas-u 2 -1) i))))
+
 (defparameter *primes-under-100*
   '(2 3 5 7 11 13 17 19 23 29 31 37 41 43 47 53 59 61 67 71 73 79 83 89 97))
 

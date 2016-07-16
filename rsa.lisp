@@ -5,6 +5,8 @@
            :solve-lin-con
            :real2bin
            :mod-pow
+           :divide-twos
+           :lucas-u
            :test-small-primes
            :fermat-prime?
            :miller-rabin-prime?
@@ -63,6 +65,24 @@
 
 (defun mod-pow (a b m)
   (mod-pow-helper a (real2bin b) 1 m))
+  
+(defun divide-twos-helper (d s)
+  (cond ((eql d 0) (list 0 0))
+        ((oddp d) (list s d))
+        (t (divide-twos-helper (/ d 2) (+ s 1)))))
+
+; returns (s d) such that n = 2^s*d
+(defun divide-twos (n)
+  (divide-twos-helper n 0))
+
+; returns U(n)
+(defun lucas-u (p q)
+  (lambda (n)
+    (labels ((lucas-u-helper (currn u0 u1)
+               (if (eql currn n) u1
+                   (lucas-u-helper (+ currn 1) u1 (- (* p u1) (* q u0))))))
+      (if (eql n 0) 0
+          (lucas-u-helper 1 0 1)))))
 
 ;; Primality tests
 
@@ -98,7 +118,23 @@
 (defun fermat-prime? (n a)
   (eql (mod-pow a (- n 1) n) 1))
 
-(defun miller-rabin-prime?-helper (d n a)
+; curr = a^(2^r*d), curr has already been checked
+(defun miller-rabin-prime?-helper (curr n r s)
+  (if (eql r (- s 1)) nil
+      (let ((newcurr (mod (* curr curr) n)))
+        (if (eql newcurr (- n 1)) t
+            (miller-rabin-prime?-helper newcurr n (+ r 1) s)))))
+
+(defun miller-rabin-prime? (n a)
+  (cond ((eql n 2) t)
+        ((evenp n) nil)
+        (t (destructuring-bind (s d) (divide-twos (- n 1))
+             (let ((curr (mod-pow a d n)))
+               (cond ((eql curr 1) t)
+                     ((eql curr (- n 1)) t)
+                     (t (miller-rabin-prime?-helper curr n 0 s))))))))
+
+#|(defun miller-rabin-prime?-helper (d n a)
   (cond ((eql (mod-pow a d n) (- n 1)) t)
         ((evenp d)
            (miller-rabin-prime?-helper (/ d 2) n a))
@@ -107,7 +143,9 @@
 (defun miller-rabin-prime? (n a)
   (cond ((eql n 2) t)
         ((evenp n) nil)
-        (t (miller-rabin-prime?-helper (/ (- n 1) 2) n a))))
+        (t (miller-rabin-prime?-helper (/ (- n 1) 2) n a))))|#
+        
+
 
 (defun prime? (a)
   (let ((t1 (test-small-primes a)))
