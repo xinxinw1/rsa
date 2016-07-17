@@ -31,18 +31,22 @@
 (defun encrypt-message (message file)
   (format t "~a~%" (encrypt (read-file file) (encode message))))
 
-(defun decrypt-no-decode (message file)
-  (format t "~a~%" (decrypt (read-file file) (parse-integer message))))
-
 (defun decrypt-message (message file)
   (format t "~a~%" (decode (decrypt (read-file file) (parse-integer message)))))
 
+(defun encrypt-no-encode (message file)
+  (format t "~a~%" (encrypt (read-file file) (parse-integer message))))
+
+(defun decrypt-no-decode (message file)
+  (format t "~a~%" (decrypt (read-file file) (parse-integer message))))
+
 (defun main ()
   (with-cli-options (sb-ext:*posix-argv*)
-      (&parameters generate p-size e-size encrypt encode decrypt decode decrypt-no-decode keyfile)
+      (&parameters generate p-size e-size encrypt encode encrypt-no-encode decrypt decode decrypt-no-decode keyfile)
     (cond (generate (gen-key-to-file (parse-integer p-size) (parse-integer e-size) generate))
           (encode (encode-message encode))
           (decode (decode-message decode))
           (encrypt (encrypt-message encrypt keyfile))
           (decrypt (decrypt-message decrypt keyfile))
+          (encrypt-no-encode (encrypt-no-encode encrypt-no-encode keyfile))
           (decrypt-no-decode (decrypt-no-decode decrypt-no-decode keyfile)))))
