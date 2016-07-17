@@ -10,9 +10,10 @@
         (list2hash-helper (cddr a) tab))))
 
 (defun list2hash (a)
-  (list2hash-helper a (make-hash-table)))
+  (list2hash-helper a (make-hash-table :test 'equal)))
 
 (setq *print-failures* t)
+(setq *print-errors* t)
 (setq *print-summary* t)
 
 (define-test real2bin
@@ -79,8 +80,90 @@
   (assert-equal '(0 1 2 5 12 29 70 169 408 985)
     (loop for i from 0 to 9 collect (funcall (lucas-u 2 -1) i))))
 
+(define-test fast-lucas
+  (assert-equal '((0 2) (1 1) (1 3) (2 4) (3 7) (5 11) (8 18) (13 29) (21 47) (34 76))
+    (loop for i from 0 to 9 collect (fast-lucas i 1 -1)))
+  (assert-equal '((0 2) (1 2) (2 6) (5 14) (12 34) (29 82) (70 198) (169 478) (408 1154) (985 2786))
+    (loop for i from 0 to 9 collect (fast-lucas i 2 -1)))
+  (assert-equal '((0 2) (1 1) (1 5) (3 7) (5 17) (11 31) (21 65) (43 127) (85 257) (171 511))
+    (loop for i from 0 to 9 collect (fast-lucas i 1 -2))))
+
+(define-test mod-lucas
+  (assert-equal '((0 2) (1 1) (1 3) (2 4) (3 7) (5 0) (8 7) (2 7) (10 3) (1 10))
+    (loop for i from 0 to 9 collect (mod-lucas i 1 -1 11)))
+  (assert-equal '((0 2) (1 2) (2 6) (5 3) (1 1) (7 5) (4 0) (4 5) (1 10) (6 3))
+    (loop for i from 0 to 9 collect (mod-lucas i 2 -1 11)))
+  (assert-equal '((0 2) (1 1) (1 5) (3 7) (5 6) (0 9) (10 10) (10 6) (8 4) (6 5))
+    (loop for i from 0 to 9 collect (mod-lucas i 1 -2 11))))
+
+(defparameter *jacobi-table*
+  (list2hash '(
+    1	#(1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1)
+    3	#(1	-1	0	1	-1	0	1	-1	0	1	-1	0	1	-1	0	1	-1	0	1	-1	0	1	-1	0	1	-1	0	1	-1	0)
+    5	#(1	-1	-1	1	0	1	-1	-1	1	0	1	-1	-1	1	0	1	-1	-1	1	0	1	-1	-1	1	0	1	-1	-1	1	0)
+    7	#(1	1	-1	1	-1	-1	0	1	1	-1	1	-1	-1	0	1	1	-1	1	-1	-1	0	1	1	-1	1	-1	-1	0	1	1)
+    9	#(1	1	0	1	1	0	1	1	0	1	1	0	1	1	0	1	1	0	1	1	0	1	1	0	1	1	0	1	1	0)
+    11	#(1	-1	1	1	1	-1	-1	-1	1	-1	0	1	-1	1	1	1	-1	-1	-1	1	-1	0	1	-1	1	1	1	-1	-1	-1)
+    13	#(1	-1	1	1	-1	-1	-1	-1	1	1	-1	1	0	1	-1	1	1	-1	-1	-1	-1	1	1	-1	1	0	1	-1	1	1)
+    15	#(1	1	0	1	0	0	-1	1	0	0	-1	0	-1	-1	0	1	1	0	1	0	0	-1	1	0	0	-1	0	-1	-1	0)
+    17	#(1	1	-1	1	-1	-1	-1	1	1	-1	-1	-1	1	-1	1	1	0	1	1	-1	1	-1	-1	-1	1	1	-1	-1	-1	1)
+    19	#(1	-1	-1	1	1	1	1	-1	1	-1	1	-1	-1	-1	-1	1	1	-1	0	1	-1	-1	1	1	1	1	-1	1	-1	1)
+    21	#(1	-1	0	1	1	0	0	-1	0	-1	-1	0	-1	0	0	1	1	0	-1	1	0	1	-1	0	1	1	0	0	-1	0)
+    23	#(1	1	1	1	-1	1	-1	1	1	-1	-1	1	1	-1	-1	1	-1	1	-1	-1	-1	-1	0	1	1	1	1	-1	1	-1)
+    25	#(1	1	1	1	0	1	1	1	1	0	1	1	1	1	0	1	1	1	1	0	1	1	1	1	0	1	1	1	1	0)
+    27	#(1	-1	0	1	-1	0	1	-1	0	1	-1	0	1	-1	0	1	-1	0	1	-1	0	1	-1	0	1	-1	0	1	-1	0)
+    29	#(1	-1	-1	1	1	1	1	-1	1	-1	-1	-1	1	-1	-1	1	-1	-1	-1	1	-1	1	1	1	1	-1	-1	1	0	1)
+    31	#(1	1	-1	1	1	-1	1	1	1	1	-1	-1	-1	1	-1	1	-1	1	1	1	-1	-1	-1	-1	1	-1	-1	1	-1	-1)
+    33	#(1	1	0	1	-1	0	-1	1	0	-1	0	0	-1	-1	0	1	1	0	-1	-1	0	0	-1	0	1	-1	0	-1	1	0)
+    35	#(1	-1	1	1	0	-1	0	-1	1	0	1	1	1	0	0	1	1	-1	-1	0	0	-1	-1	-1	0	-1	1	0	1	0)
+    37	#(1	-1	1	1	-1	-1	1	-1	1	1	1	1	-1	-1	-1	1	-1	-1	-1	-1	1	-1	-1	-1	1	1	1	1	-1	1)
+    39	#(1	1	0	1	1	0	-1	1	0	1	1	0	0	-1	0	1	-1	0	-1	1	0	1	-1	0	1	0	0	-1	-1	0)
+    41	#(1	1	-1	1	1	-1	-1	1	1	1	-1	-1	-1	-1	-1	1	-1	1	-1	1	1	-1	1	-1	1	-1	-1	-1	-1	-1)
+    43	#(1	-1	-1	1	-1	1	-1	-1	1	1	1	-1	1	1	1	1	1	-1	-1	-1	1	-1	1	1	1	-1	-1	-1	-1	-1)
+    45	#(1	-1	0	1	0	0	-1	-1	0	0	1	0	-1	1	0	1	-1	0	1	0	0	-1	-1	0	0	1	0	-1	1	0)
+    47	#(1	1	1	1	-1	1	1	1	1	-1	-1	1	-1	1	-1	1	1	1	-1	-1	1	-1	-1	1	1	-1	1	1	-1	-1)
+    49	#(1	1	1	1	1	1	0	1	1	1	1	1	1	0	1	1	1	1	1	1	0	1	1	1	1	1	1	0	1	1)
+    51	#(1	-1	0	1	1	0	-1	-1	0	-1	1	0	1	1	0	1	0	0	1	1	0	-1	1	0	1	-1	0	-1	1	0)
+    53	#(1	-1	-1	1	-1	1	1	-1	1	1	1	-1	1	-1	1	1	1	-1	-1	-1	-1	-1	-1	1	1	-1	-1	1	1	-1)
+    55	#(1	1	-1	1	0	-1	1	1	1	0	0	-1	1	1	0	1	1	1	-1	0	-1	0	-1	-1	0	1	-1	1	-1	0)
+    57	#(1	1	0	1	-1	0	1	1	0	-1	-1	0	-1	1	0	1	-1	0	0	-1	0	-1	-1	0	1	-1	0	1	1	0)
+    59	#(1	-1	1	1	1	-1	1	-1	1	-1	-1	1	-1	-1	1	1	1	-1	1	1	1	1	-1	-1	1	1	1	1	1	-1))))
+
+(define-test jacobi
+  (loop for n from 1 to 59 when (oddp n) do
+    (loop for k from 1 to 30 do
+      (assert-equal (elt (gethash n *jacobi-table*) (- k 1)) (jacobi k n)))))
+
+
 (defparameter *primes-under-100*
   '(2 3 5 7 11 13 17 19 23 29 31 37 41 43 47 53 59 61 67 71 73 79 83 89 97))
+
+(defparameter *primes-under-1000*
+  '(2	3	5	7	11	13	17	19	23	29
+    31	37	41	43	47	53	59	61	67	71
+    73	79	83	89	97	101	103	107	109	113
+    127	131	137	139	149	151	157	163	167	173
+    179	181	191	193	197	199	211	223	227	229
+    233	239	241	251	257	263	269	271	277	281
+    283	293	307	311	313	317	331	337	347	349
+    353	359	367	373	379	383	389	397	401	409
+    419	421	431	433	439	443	449	457	461	463
+    467	479	487	491	499	503	509	521	523	541
+    547	557	563	569	571	577	587	593	599	601
+    607	613	617	619	631	641	643	647	653	659
+    661	673	677	683	691	701	709	719	727	733
+    739	743	751	757	761	769	773	787	797	809
+    811	821	823	827	829	839	853	857	859	863
+    877	881	883	887	907	911	919	929	937	941
+    947	953	967	971	977	983	991	997))
+
+
+(define-test prime-sieve
+  (assert-equal *primes-under-100* (prime-sieve 100))
+  (assert-equal *primes-under-1000* (prime-sieve 1000)))
+
+
+(defparameter *primes-under-30000* (prime-sieve 30000))
 
 (defparameter *fermat-pseudoprimes*
   (list2hash '(
@@ -117,6 +200,21 @@
                 (find n (gethash a *miller-rabin-pseudoprimes*)))
             (assert-true (miller-rabin-prime? n a))
             (assert-false (miller-rabin-prime? n a)))))))
+
+; The list at https://en.wikipedia.org/wiki/Lucas_pseudoprime#Lucas_probable_primes_and_pseudoprimes
+(defparameter *lucas-pseudoprimes*
+  (list2hash '(
+    (3 -1) (119 649 1189 1763 3599 4187 5559 6681 12095 12403 12685 12871 14041 14279 15051 16109 19043 22847 23479 24769 26795 28421))))
+
+(define-test lucas-prime-pq?
+  (loop for p from 3 to 3 do
+    (loop for q from -1 to -1 do
+      (loop for n from 2 to 30000 when (oddp n) do
+        (if (coprime n q)
+          (if (or (find n *primes-under-30000*)
+                  (find n (gethash (list p q) *lucas-pseudoprimes*)))
+              (assert-true (lucas-prime-pq? n p q))
+              (assert-false (lucas-prime-pq? n p q))))))))
 
 (define-test random-size
   (assert-equal 300 (length (write-to-string (random-size 300)))))

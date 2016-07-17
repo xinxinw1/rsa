@@ -7,9 +7,14 @@
            :mod-pow
            :divide-twos
            :lucas-u
+           :fast-lucas
+           :mod-lucas
+           :jacobi
+           :prime-sieve
            :test-small-primes
            :fermat-prime?
            :miller-rabin-prime?
+           :lucas-prime-pq?
            :prime?
            :random-range
            :random-size
@@ -84,26 +89,132 @@
       (if (eql n 0) 0
           (lucas-u-helper 1 0 1)))))
 
+(defun fast-lucas-helper (bin u v qpow p q d)
+  (if (null bin) (list u v)
+      (fast-lucas-helper2
+        bin
+        (* u v)
+        (- (* v v) (* 2 qpow))
+        (* qpow qpow)
+        p q d)))
+  
+(defun fast-lucas-helper2 (bin u v qpow p q d)
+  (if (eql (car bin) 1)
+      (fast-lucas-helper
+        (cdr bin)
+        (/ (+ (* p u) v) 2)
+        (/ (+ (* d u) (* p v)) 2)
+        (* qpow q)
+        p q d)
+      (fast-lucas-helper
+        (cdr bin)
+        u
+        v
+        qpow
+        p q d)))
+
+; returns (U(n) V(n))
+(defun fast-lucas (n p q)
+  (fast-lucas-helper (nreverse (real2bin n)) 0 2 1 p q (- (* p p) (* 4 q))))
+
+
+(defun mod-lucas-double (u v qpow m)
+  (list (mod (* u v) m) (mod (- (* v v) (* 2 qpow)) m) (mod (* qpow qpow) m)))
+
+; assumes m is odd
+(defun mod-lucas-plus1 (u v qpow p q d m)
+  (let* ((u2 (+ (* p u) v))
+         (adju2 (if (oddp u2) (+ u2 m) u2))
+         (v2 (+ (* d u) (* p v)))
+         (adjv2 (if (oddp v2) (+ v2 m) v2)))
+    (list (mod (/ adju2 2) m)
+          (mod (/ adjv2 2) m)
+          (mod (* qpow q) m))))
+
+(defun mod-lucas-helper (bin u v qpow p q d m)
+  ;(format t "u: ~S v: ~S qpow: ~S~%" u v qpow)
+  (if (null bin) (values (list u v) qpow)
+      (destructuring-bind (newu newv newqpow) (mod-lucas-double u v qpow m)
+        (mod-lucas-helper2 bin newu newv newqpow p q d m))))
+  
+(defun mod-lucas-helper2 (bin u v qpow p q d m)
+  ;(format t "u: ~S v: ~S qpow: ~S~%" u v qpow)
+  (if (eql (car bin) 1)
+      (destructuring-bind (newu newv newqpow) (mod-lucas-plus1 u v qpow p q d m)
+        (mod-lucas-helper (cdr bin) newu newv newqpow p q d m))
+      (mod-lucas-helper (cdr bin) u v qpow p q d m)))
+
+; returns (U(n) V(n)) (mod m)
+; we assume gcd(m, 2) = 1 (ie. m must be odd)
+(defun mod-lucas (n p q m)
+  (if (evenp m) (error "MOD-LUCAS: ~S must be an odd number." m)
+      (mod-lucas-helper
+        (nreverse (real2bin n))
+        0 2 1
+        (mod p m)
+        (mod q m)
+        (mod (- (* p p) (* 4 q)) m)
+        m)))
+
+; assume n is odd
+(defun jacobi-step1 (a n)
+  (if (eql n 1) 1
+      (jacobi-step2 (mod a n) n)))
+
+; (jacobi 2 n), n is odd, n != 1
+(defun jacobi-top2 (n)
+  (let ((m (mod n 8)))
+    (if (or (eql m 1) (eql m 7)) 1
+        -1)))
+
+; at this point, a < n
+(defun jacobi-step2 (a n)
+  (cond ((eql a 0) 0)
+        ((evenp a) (* (jacobi-top2 n) (jacobi-step2 (/ a 2) n)))
+        ((jacobi-step3 a n))))
+
+; at this point a < n, a odd
+(defun jacobi-step3 (a n)
+  (cond ((eql a 1) 1)
+        ((not (coprime a n)) 0)
+        (t (jacobi-step4 a n))))
+
+; (* (jacobi n m) (jacobi m n))
+(defun jacobi-prod-reci (n m)
+  (if (or (eql (mod n 4) 1) (eql (mod m 4) 1))
+      1
+      -1))
+
+; at this point, a < n, a and n are both odd and coprime
+(defun jacobi-step4 (a n)
+  (* (jacobi-prod-reci a n) (jacobi-step1 n a)))
+
+(defun jacobi (a n)
+  (if (evenp n) (error "JACOBI: ~S must be an odd number." n)
+      (jacobi-step1 a n)))
+
+(defun get-first-unmarked-after (p arr)
+  (let ((start (if p p 2)))
+    (loop for i from start to (- (length arr) 1) do
+      (if (elt arr i) (return-from get-first-unmarked-after i)))))
+
+(defun mark-all-multiples (p arr)
+  (loop for i from p to (- (length arr) 1) by p do
+    (setf (elt arr i) nil)))
+
+; indexes 2 to n -> 0 to n-2, len n-1
+(defun prime-sieve (n)
+  (let ((primes nil) (arr (make-array n :initial-element t)))
+    (loop
+      (let ((p (get-first-unmarked-after (car primes) arr)))
+        (if (not p) (return-from prime-sieve (nreverse primes))
+            (progn (push p primes)
+                   (mark-all-multiples p arr)))))))
+    
 ;; Primality tests
 
 (defparameter *small-primes*
-  '(2 3 5 7 11 13 17 19 23 29
-    31 37 41 43 47 53 59 61 67 71
-    73 79 83 89 97 101 103 107 109 113
-    127 131 137 139 149 151 157 163 167 173
-    179 181 191 193 197 199 211 223 227 229
-    233 239 241 251 257 263 269 271 277 281
-    283 293 307 311 313 317 331 337 347 349
-    353 359 367 373 379 383 389 397 401 409
-    419 421 431 433 439 443 449 457 461 463
-    467 479 487 491 499 503 509 521 523 541
-    547 557 563 569 571 577 587 593 599 601
-    607 613 617 619 631 641 643 647 653 659
-    661 673 677 683 691 701 709 719 727 733
-    739 743 751 757 761 769 773 787 797 809
-    811 821 823 827 829 839 853 857 859 863
-    877 881 883 887 907 911 919 929 937 941
-    947 953 967 971 977 983 991 997))
+  (prime-sieve 1000))
 
 (defun test-small-primes-helper (a primes)
   (if (null primes) t
@@ -144,8 +255,13 @@
   (cond ((eql n 2) t)
         ((evenp n) nil)
         (t (miller-rabin-prime?-helper (/ (- n 1) 2) n a))))|#
-        
 
+; n, a integers, (gcd n q) = 1
+(defun lucas-prime-pq? (n p q)
+  (let* ((d (- (* p p) (* 4 q)))
+        (j (jacobi d n)))
+    (if (and (eql j 0) (not (eql d n))) nil
+        (eql (car (mod-lucas (- n (jacobi d n)) p q n)) 0))))
 
 (defun prime? (a)
   (let ((t1 (test-small-primes a)))
