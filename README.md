@@ -10,6 +10,8 @@
 
 This will make two files: `<key file>` and `<key file>.pub`
 
+The format of the public key is `(e n)` and the format of the private key is `(d n)`
+
 ## Encrypt
 
 1. `./rsa --encrypt "<message>" -k <public key file>`
