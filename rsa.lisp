@@ -27,9 +27,16 @@
            :make-rsa-nums
            :make-rsa-keys
            :gen-pqe
+           :gen-rsa-nums
            :gen-rsa-keys
            :encrypt
-           :decrypt))
+           :decrypt
+           :char-to-3-digit-ascii
+           :encode-to-str
+           :encode
+           :group-by-3
+           :decode-from-str
+           :decode))
 
 (in-package :rsa)
 
@@ -346,9 +353,12 @@
         (n (* p q)))
     (list e d n)))
 
-(defun make-rsa-keys (p q e)
-  (destructuring-bind (e d n) (make-rsa-nums p q e)
+(defun rsa-nums-to-keys (l)
+  (destructuring-bind (e d n) l
     (list (list e n) (list d n))))
+
+(defun make-rsa-keys (p q e)
+  (rsa-nums-to-keys (make-rsa-nums p q e)))
 
 (defun gen-pqe (prime-size e-size)
   ; according to Wikipedia, prime size should differ by a few digits
@@ -358,9 +368,11 @@
              (e (random-coprime phi e-size)))
         (values (list p q e) pn qn)))))
 
+(defun gen-rsa-nums (prime-size e-size)
+  (apply #'make-rsa-nums (gen-pqe prime-size e-size)))
+
 (defun gen-rsa-keys (prime-size e-size)
-  (destructuring-bind (p q e) (gen-pqe prime-size e-size)
-    (make-rsa-keys p q e)))
+  (rsa-nums-to-keys (gen-rsa-nums prime-size e-size)))
 
 ;; Encryption and Decryption
 
@@ -369,3 +381,40 @@
 
 (defun decrypt (pri c)
   (mod-pow c (car pri) (cadr pri)))
+
+;; Text to number
+
+(defun char-to-3-digit-ascii (c)
+  (format nil "~3,'0d" (char-code c)))
+
+; encode string to string
+(defun encode-to-str (str)
+  (apply #'concatenate (cons 'string (loop for c across str collect (char-to-3-digit-ascii c)))))
+
+(defun str-to-num (str)
+  (let ((n (parse-integer str :junk-allowed t)))
+    (if (not n) 0 n)))
+
+; encode string to integer
+(defun encode (str)
+  (str-to-num (encode-to-str str)))
+
+(defun subseq-check-end (str start end)
+  (cond ((> end (length str))
+           (subseq-check-end str start (length str)))
+        ((< start 0) (subseq-check-end str 0 end))
+        (t (subseq str start end))))
+
+(defun group-by-3 (str)
+  (nreverse (loop for i downfrom (length str) to 1 by 3
+    collect (subseq-check-end str (- i 3) i))))
+
+(defun decode-from-str (str)
+  (map 'string #'code-char (map 'list #'str-to-num (group-by-3 str))))
+
+(defun num-to-str (num)
+  (if (eql num 0) ""
+      (write-to-string num)))
+
+(defun decode (num)
+  (decode-from-str (num-to-str num)))

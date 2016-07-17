@@ -9,58 +9,40 @@
 (defparameter *my-keys* nil)
 (defparameter *bob-pubkey* nil)
 
-(defun get-option (options)
-  (format t "Choose an option: ")
-  (finish-output)
-  (let ((option (read-line)))
-    (loop while (not (find option options :test 'equal)) do
-      (format t "Invalid option ~a.
-Choose an option: " option)
-      (setq option (read-line)))
-    (format t "~%")
-    option))
+(defun save-key-in-file (key file)
+  (with-open-file (fstream file :direction :output)
+    (format fstream "~S~%" key)))
 
-(defun get-valid-nat-num (text)
-  (format t "Enter ~a: " text)
-  (finish-output)
-  (let* ((in (read-line)) (num (parse-integer in)))
-    (loop while (or (not num) (< num 1)) do
-      (format t "Invalid ~a ~a.
-Enter ~a: " text in text)
-      (setq in (read-line))
-      (setq num (parse-integer in)))
-    num))
+(defun read-file (file)
+  (with-open-file (fstream file)
+    (read fstream)))
 
-(defun generate-mode ()
-  (let ((prime-size (get-valid-nat-num "prime size"))
-        (e-size (get-valid-nat-num "e size")))
-    (let ((my-keys (gen-rsa-keys prime-size e-size)))
-      (destructuring-bind ((e n) (d nil)) my-keys
-        (setq *my-keys* my-keys)
-        (format t "~%")
-        (format t "Generated public and private keys:~%~%")
-        (format t "e: ~a~%" e)
-        (format t "d: ~a~%" d)
-        (format t "n: ~a~%" n)
-        (format t "~%")
-        (main-menu)))))
+(defun gen-key-to-file (prime-size e-size file)
+  (destructuring-bind (pub pri) (gen-rsa-keys prime-size e-size)
+    (save-key-in-file pri file)
+    (save-key-in-file pub (concatenate 'string file ".pub"))))
+
+(defun encode-message (message)
+  (format t "~a~%" (encode message)))
+
+(defun decode-message (message)
+  (format t "~a~%" (decode (parse-integer message))))
+
+(defun encrypt-message (message file)
+  (format t "~a~%" (encrypt (read-file file) (encode message))))
+
+(defun decrypt-no-decode (message file)
+  (format t "~a~%" (decrypt (read-file file) (parse-integer message))))
+
+(defun decrypt-message (message file)
+  (format t "~a~%" (decode (decrypt (read-file file) (parse-integer message)))))
 
 (defun main ()
   (with-cli-options (sb-ext:*posix-argv*)
-      (generate encrypt decrypt out keyfile message)
-    (format t "generate: ~S encrypt: ~S decrypt: ~S out: ~S keyfile: ~S message: ~S~%~%"
-      generate encrypt decrypt out keyfile message))
-  (format t "ECE 103 RSA Program~%~%")
-  (main-menu))
-
-(defun main-menu ()
-  (format t "1. Generate keys
-2. Import keys
-3. Encrypt message
-4. Exit
-
-")
-  (let ((option (parse-integer (get-option '("1" "2" "3" "4")))))
-    (case option (1 (generate-mode))
-                 (2 (import-mode))
-                 (3 (encrypt-mode)))))
+      (&parameters generate p-size e-size encrypt encode decrypt decode decrypt-no-decode keyfile)
+    (cond (generate (gen-key-to-file (parse-integer p-size) (parse-integer e-size) generate))
+          (encode (encode-message encode))
+          (decode (decode-message decode))
+          (encrypt (encrypt-message encrypt keyfile))
+          (decrypt (decrypt-message decrypt keyfile))
+          (decrypt-no-decode (decrypt-no-decode decrypt-no-decode keyfile)))))

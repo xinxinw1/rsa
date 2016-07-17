@@ -240,11 +240,11 @@
         (assert-true (lucas-prime? n))
         (assert-false (lucas-prime? n)))))
 
-(defparameter *primes-under-50000* (prime-sieve 50000))
+(defparameter *primes-under-20000* (prime-sieve 20000))
 
 (define-test prime?
-  (loop for n from 1 to 50000 do
-    (if (find n *primes-under-50000*)
+  (loop for n from 1 to 20000 do
+    (if (find n *primes-under-20000*)
         (assert-true (prime? n))
         (assert-false (prime? n)))))
 
@@ -262,3 +262,44 @@
   (assert-equal 1234567
     (let ((key (gen-rsa-keys 30 5)))
       (encrypt (cadr key) (decrypt (car key) 1234567)))))
+
+(define-test char-to-3-digit-ascii
+  (assert-equal "032" (char-to-3-digit-ascii #\Space))
+  (assert-equal "116" (char-to-3-digit-ascii #\t))
+  (assert-equal "126" (char-to-3-digit-ascii #\~)))
+
+(define-test encode-to-str
+  (assert-equal "" (encode-to-str ""))
+  (assert-equal "032" (encode-to-str " "))
+  (assert-equal "080114111111102115032097114101032097119101115111109101033033033032076079076122"
+    (encode-to-str "Proofs are awesome!!! LOLz")))
+
+(define-test encode
+  (assert-equal 0 (encode ""))
+  (assert-equal 32 (encode " "))
+  (assert-equal 80114111111102115032097114101032097119101115111109101033033033032076079076122
+    (encode "Proofs are awesome!!! LOLz")))
+
+(define-test group-by-3
+  (assert-equal '("1") (group-by-3 "1"))
+  (assert-equal '("12") (group-by-3 "12"))
+  (assert-equal '("123") (group-by-3 "123"))
+  (assert-equal '("1" "234") (group-by-3 "1234"))
+  (assert-equal '("12" "345") (group-by-3 "12345"))
+  (assert-equal '("123" "456") (group-by-3 "123456"))
+  (assert-equal '("1" "234" "567") (group-by-3 "1234567")))
+
+(define-test decode-from-str
+  (assert-equal "" (decode-from-str ""))
+  (assert-equal " " (decode-from-str "032"))
+  (assert-equal " " (decode-from-str "32"))
+  (assert-equal "Proofs are awesome!!! LOLz"
+    (decode-from-str "080114111111102115032097114101032097119101115111109101033033033032076079076122"))
+  (assert-equal "Proofs are awesome!!! LOLz"
+    (decode-from-str "80114111111102115032097114101032097119101115111109101033033033032076079076122")))
+
+(define-test decode
+  (assert-equal "" (decode 0))
+  (assert-equal " " (decode 32))
+  (assert-equal "Proofs are awesome!!! LOLz"
+    (decode 80114111111102115032097114101032097119101115111109101033033033032076079076122)))

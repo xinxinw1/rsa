@@ -1,0 +1,3 @@
+#!/usr/bin/bash
+
+sbcl --noinform --load rsa.lisp --load unix-options.lisp --load rsa-main.lisp --eval $"(save-lisp-and-die \"rsa\" :toplevel 'rsa-main:main :executable t)"
