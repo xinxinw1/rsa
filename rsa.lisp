@@ -11,10 +11,14 @@
            :mod-lucas
            :jacobi
            :prime-sieve
+           :perfect-square?
+           :find-lucas-d
+           :find-lucas-pq
            :test-small-primes
            :fermat-prime?
            :miller-rabin-prime?
            :lucas-prime-pq?
+           :lucas-prime?
            :prime?
            :random-range
            :random-size
@@ -195,11 +199,11 @@
 
 (defun get-first-unmarked-after (p arr)
   (let ((start (if p p 2)))
-    (loop for i from start to (- (length arr) 1) do
+    (loop for i from start below (length arr) do
       (if (elt arr i) (return-from get-first-unmarked-after i)))))
 
 (defun mark-all-multiples (p arr)
-  (loop for i from p to (- (length arr) 1) by p do
+  (loop for i from p below (length arr) by p do
     (setf (elt arr i) nil)))
 
 ; indexes 2 to n -> 0 to n-2, len n-1
@@ -210,6 +214,27 @@
         (if (not p) (return-from prime-sieve (nreverse primes))
             (progn (push p primes)
                    (mark-all-multiples p arr)))))))
+
+(defun perfect-square? (n)
+  (eql (expt (isqrt n) 2) n))
+
+; find d such that (jacobi d n) = -1
+; n must not be even
+(defun find-lucas-d (n)
+  (if (perfect-square? n) nil
+      (loop for i from 1
+            for absd from 5 by 2
+            for d = (if (oddp i) absd (- absd)) do
+        ;(if (> i 100) (progn (print "what") (return-from find-lucas-d nil)))
+        (let ((j (jacobi d n)))
+          (cond ((and (eql j 0) (not (eql n absd))) (return-from find-lucas-d nil))
+                ((eql (jacobi d n) -1) (return-from find-lucas-d d)))))))
+
+; n must not be even
+(defun find-lucas-pq (n)
+  (let ((d (find-lucas-d n)))
+    (if (not d) nil
+        (list 1 (/ (- 1 d) 4) d))))
     
 ;; Primality tests
 
@@ -217,7 +242,7 @@
   (prime-sieve 1000))
 
 (defun test-small-primes-helper (a primes)
-  (if (null primes) t
+  (if (or (null primes) (>= (car primes) a)) t
       (if (divides (car primes) a) nil
           (test-small-primes-helper a (cdr primes)))))
 
@@ -255,17 +280,32 @@
   (cond ((eql n 2) t)
         ((evenp n) nil)
         (t (miller-rabin-prime?-helper (/ (- n 1) 2) n a))))|#
+        
+(defun lucas-prime-pqdj? (n p q d j)
+  (if (and (eql j 0) (not (eql d n))) nil
+      (eql (car (mod-lucas (- n j) p q n)) 0)))
 
 ; n, a integers, (gcd n q) = 1
 (defun lucas-prime-pq? (n p q)
   (let* ((d (- (* p p) (* 4 q)))
         (j (jacobi d n)))
-    (if (and (eql j 0) (not (eql d n))) nil
-        (eql (car (mod-lucas (- n (jacobi d n)) p q n)) 0))))
+    (lucas-prime-pqdj? n p q d j)))
+
+(defun lucas-prime? (n)
+  (cond ((eql n 2) t)
+        ((evenp n) nil)
+        (t (let ((pqd (find-lucas-pq n)))
+             (if (not pqd) nil
+                 (destructuring-bind (p q d) pqd
+                   (if (not (coprime n q)) nil
+                       (lucas-prime-pqdj? n p q d -1))))))))
 
 (defun prime? (a)
   (let ((t1 (test-small-primes a)))
-    (values (and t1 (miller-rabin-prime? a 2)) t1)))
+    (if (not t1) (values t1 t1 nil)
+        (let ((t2 (miller-rabin-prime? a 2)))
+          (if (not t2) (values t2 t1 t2)
+              (values (lucas-prime? a) t1 t2))))))
 
 ;; Random number functions
 
@@ -283,15 +323,16 @@
         (random-prime s))))
 |#
 
-(defun random-prime-helper (s n)
+(defun random-prime-helper (s n m)
   (let ((a (random-size s)))
-    (multiple-value-bind (prime used-2nd-test) (prime? a)
-      (let ((new-n (if used-2nd-test (+ n 1) n)))
-        (if prime (values a new-n)
-            (random-prime-helper s new-n))))))
+    (multiple-value-bind (prime used-2nd-test used-3rd-test) (prime? a)
+      (let ((new-n (if used-2nd-test (+ n 1) n))
+            (new-m (if used-3rd-test (+ m 1) m)))
+        (if prime (values a new-n new-m)
+            (random-prime-helper s new-n new-m))))))
 
 (defun random-prime (s)
-  (random-prime-helper s 0))
+  (random-prime-helper s 0 0))
 
 (defun random-coprime (b s)
   (let ((a (random-size s)))
@@ -310,7 +351,8 @@
     (list (list e n) (list d n))))
 
 (defun gen-pqe (prime-size e-size)
-  (multiple-value-bind (p pn) (random-prime prime-size)
+  ; according to Wikipedia, prime size should differ by a few digits
+  (multiple-value-bind (p pn) (random-prime (+ prime-size 3))
     (multiple-value-bind (q qn) (random-prime prime-size)
       (let* ((phi (* (- p 1) (- q 1)))
              (e (random-coprime phi e-size)))
@@ -327,4 +369,3 @@
 
 (defun decrypt (pri c)
   (mod-pow c (car pri) (cadr pri)))
-

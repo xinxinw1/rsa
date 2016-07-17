@@ -162,8 +162,18 @@
   (assert-equal *primes-under-100* (prime-sieve 100))
   (assert-equal *primes-under-1000* (prime-sieve 1000)))
 
+(defparameter *perfect-squares*
+  '(1 4 9 16 25 36 49 64 81 100))
 
-(defparameter *primes-under-30000* (prime-sieve 30000))
+(define-test perfect-square?
+  (loop for n from 1 to 100 do
+    (if (find n *perfect-squares*)
+        (assert-true (perfect-square? n))
+        (assert-false (perfect-square? n)))))
+
+(define-test find-lucas-d
+  (assert-equal '(nil 5 -7 5 nil 13 5 nil 5 -7 nil 5 nil 5 -11 -7 5 nil 5 nil -7 5 nil 5 nil nil 5 nil 5 -7 -7 5 nil 5 -7 13 5 nil 5 -11 nil 5 nil 5 -7 nil 5 nil 5 nil)
+    (loop for n from 1 to 100 by 2 collect (find-lucas-d n))))
 
 (defparameter *fermat-pseudoprimes*
   (list2hash '(
@@ -202,9 +212,11 @@
             (assert-false (miller-rabin-prime? n a)))))))
 
 ; The list at https://en.wikipedia.org/wiki/Lucas_pseudoprime#Lucas_probable_primes_and_pseudoprimes
-(defparameter *lucas-pseudoprimes*
+(defparameter *lucas-pseudoprimes-pq*
   (list2hash '(
     (3 -1) (119 649 1189 1763 3599 4187 5559 6681 12095 12403 12685 12871 14041 14279 15051 16109 19043 22847 23479 24769 26795 28421))))
+
+(defparameter *primes-under-30000* (prime-sieve 30000))
 
 (define-test lucas-prime-pq?
   (loop for p from 3 to 3 do
@@ -212,9 +224,29 @@
       (loop for n from 2 to 30000 when (oddp n) do
         (if (coprime n q)
           (if (or (find n *primes-under-30000*)
-                  (find n (gethash (list p q) *lucas-pseudoprimes*)))
+                  (find n (gethash (list p q) *lucas-pseudoprimes-pq*)))
               (assert-true (lucas-prime-pq? n p q))
               (assert-false (lucas-prime-pq? n p q))))))))
+
+(defparameter *primes-under-10000* (prime-sieve 10000))
+
+(defparameter *lucas-pseudoprimes*
+  '(323 377 1159 1829 3827 5459 5777 9071 9179))
+
+(define-test lucas-prime?
+  (loop for n from 1 to 10000 do
+    (if (or (find n *primes-under-10000*)
+            (find n *lucas-pseudoprimes*))
+        (assert-true (lucas-prime? n))
+        (assert-false (lucas-prime? n)))))
+
+(defparameter *primes-under-50000* (prime-sieve 50000))
+
+(define-test prime?
+  (loop for n from 1 to 50000 do
+    (if (find n *primes-under-50000*)
+        (assert-true (prime? n))
+        (assert-false (prime? n)))))
 
 (define-test random-size
   (assert-equal 300 (length (write-to-string (random-size 300)))))
