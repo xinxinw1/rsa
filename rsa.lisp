@@ -29,14 +29,16 @@
            :gen-pqe
            :gen-rsa-nums
            :gen-rsa-keys
-           :encrypt
-           :decrypt
+           :encrypt-num
+           :decrypt-num
            :char-to-3-digit-ascii
            :encode-to-str
            :encode
            :group-by-3
            :decode-from-str
-           :decode))
+           :decode
+           :encrypt
+           :decrypt))
 
 (in-package :rsa)
 
@@ -376,10 +378,13 @@
 
 ;; Encryption and Decryption
 
-(defun encrypt (pub m)
-  (mod-pow m (car pub) (cadr pub)))
+(defun encrypt-num (pub m)
+  (destructuring-bind (e n) pub
+    (if (>= m n)
+          (error "ENCRYPT-NUM: Message must be less than n")
+        (mod-pow m e n))))
 
-(defun decrypt (pri c)
+(defun decrypt-num (pri c)
   (mod-pow c (car pri) (cadr pri)))
 
 ;; Text to number
@@ -418,3 +423,13 @@
 
 (defun decode (num)
   (decode-from-str (num-to-str num)))
+
+; m is a string
+; returns num
+(defun encrypt (pub m)
+  (encrypt-num pub (encode m)))
+
+; c is a num
+; returns string
+(defun decrypt (pri c)
+  (decode (decrypt-num pri c)))

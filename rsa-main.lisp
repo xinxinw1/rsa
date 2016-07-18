@@ -6,9 +6,6 @@
 
 ;; Interface
 
-(defparameter *my-keys* nil)
-(defparameter *bob-pubkey* nil)
-
 (defun save-key-in-file (key file)
   (with-open-file (fstream file :direction :output)
     (format fstream "~S~%" key)))
@@ -29,16 +26,16 @@
   (format t "~a~%" (decode (parse-integer message))))
 
 (defun encrypt-message (message file)
-  (format t "~a~%" (encrypt (read-file file) (encode message))))
+  (format t "~a~%" (encrypt (read-file file) message)))
 
 (defun decrypt-message (message file)
-  (format t "~a~%" (decode (decrypt (read-file file) (parse-integer message)))))
+  (format t "~a~%" (decrypt (read-file file) (parse-integer message))))
 
 (defun encrypt-no-encode (message file)
-  (format t "~a~%" (encrypt (read-file file) (parse-integer message))))
+  (format t "~a~%" (encrypt-num (read-file file) (parse-integer message))))
 
 (defun decrypt-no-decode (message file)
-  (format t "~a~%" (decrypt (read-file file) (parse-integer message))))
+  (format t "~a~%" (decrypt-num (read-file file) (parse-integer message))))
 
 (defun main ()
   (with-cli-options (sb-ext:*posix-argv*)
