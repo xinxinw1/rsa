@@ -4,26 +4,35 @@ The code that does all the computation is in `lib/rsa.lisp` which only uses the 
 
 ## Dependencies
 
-The command line interface and shell scripts currently only works with the Common Lisp distribution SBCL (Steel Bank Common Lisp) on Linux.
+The command line interface and shell scripts currently only works with the Common Lisp distribution SBCL (Steel Bank Common Lisp).
 
 ## Download
 
 Install [Steel Bank Common Lisp](http://www.sbcl.org/).
 
+On Linux or if you have git on Windows:
+
 `git clone https://github.com/xinxinw1/rsa.git`  
 `cd rsa`
 
+On Windows without git:
+
+Click the green "Clone or download" button on the top right on Github, click "Download ZIP". Extract to some directory. Open Command Prompt and cd to that directory.
+
 ## Compile
 
-`./compile`
+On Linux: `./compile` This will make a file `rsa` in the current directory.
 
-This will make a file `rsa` in the current directory.
+On Windows: Double click `compile.bat`. This will make a file `rsa.exe` in the current directory.
 
 After compiling:
 
+On Windows: Open Command Promp
+
 ### Generate public-private key pair
 
-`./rsa -g <key file> -p 300 -e 20`
+On Linux: `./rsa -g <key file> -p 300 -e 20`  
+On Windows: `rsa -g <key file> -p 300 -e 20`
 
 This will make two files: `<key file>` and `<key file>.pub`
 
@@ -33,32 +42,43 @@ The format of the public key is `(e n)` and the format of the private key is `(d
 
 ### Encrypt
 
-`./rsa --encrypt $'<message>' -k <public key file>`
+On Linux: `./rsa --encrypt $'<message>' -k <public key file>`
+
+`$'<message>'` is the Bash string escape syntax so you can include special characters like `!`, `'`, or `"`, for example `$'What\'s that "thing"!!??'`.
+
+On Windows: `rsa --encrypt "<message>" -k <public key file>`
 
 ### Decrypt
 
-`./rsa --decrypt <numerical message> -k <private key file>`
+On Linux: `./rsa --decrypt <numerical message> -k <private key file>`  
+On Windows: `rsa --decrypt <numerical message> -k <private key file>`
 
 ### ASCII Encode only
 
-`./rsa --encode $'<message>'`
+On Linux: `./rsa --encode $'<message>'`  
+On Windows: `rsa --encode "<message>"`
 
 ### ASCII Decode only
 
-`./rsa --decode <ascii message>`
+On Linux: `./rsa --decode <ascii message>`  
+On Windows: `rsa --decode <ascii message>`
 
 ### Encrypt without encode
 
-`./rsa --encrypt-no-encode <numerical message> -k <public key file>`
+On Linux: `./rsa --encrypt-no-encode <numerical message> -k <public key file>`  
+On Windows: `rsa --encrypt-no-encode <numerical message> -k <public key file>`
 
 ### Decrypt without decode
 
-`./rsa --decrypt-no-decode <numerical message> -k <private key file>`
+On Linux: `./rsa --decrypt-no-decode <numerical message> -k <private key file>`  
+On Windows: `rsa --decrypt-no-decode <numerical message> -k <private key file>`
 
 ## Run tests
 
-`./run-tests`
+On Linux: `./run-tests`
+On Windows: Double click `run-tests.bat`.
 
 ## Open Lisp REPL (Read-eval-print loop) with everything loaded
 
-`./repl`
+On Linux: `./repl`
+On Windows: Double click `repl.bat`.
