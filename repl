@@ -1,3 +1,9 @@
 #!/usr/bin/bash
 
-rlwrap sbcl --noinform --load lib/rsa.lisp --load testing/lisp-unit.lisp --load testing/rsa-test.lisp --load interface/unix-options.lisp --load interface/rsa-main.lisp
+if command -v rlwrap >/dev/null 2>&1; then
+  sbcl="rlwrap sbcl"
+else
+  sbcl="sbcl"
+fi
+
+$sbcl --noinform --load lib/rsa.lisp --load testing/lisp-unit.lisp --load testing/rsa-test.lisp --load interface/unix-options.lisp --load interface/rsa-main.lisp
