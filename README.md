@@ -17,6 +17,8 @@ Install [Steel Bank Common Lisp](http://www.sbcl.org/).
 
 `./compile`
 
+This will make a file `rsa` in the current directory.
+
 After compiling:
 
 ### Generate public-private key pair
