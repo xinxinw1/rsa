@@ -8,8 +8,9 @@ The command line interface and shell scripts currently only works with the Commo
 
 ## Download
 
-`git clone https://github.com/xinxinw1/rsa.git`
+Install [http://www.sbcl.org/](Steel Bank Common Lisp).
 
+`git clone https://github.com/xinxinw1/rsa.git`  
 `cd rsa`
 
 ## Compile
