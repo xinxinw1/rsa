@@ -31,10 +31,10 @@ On Windows: Open Command Promp
 
 ### Generate public-private key pair
 
-On Linux: `./rsa -g <key file> -p 300 -e 20`  
-On Windows: `rsa -g <key file> -p 300 -e 20`
+On Linux: `./rsa -g keys/<key file> -p 300 -e 20`  
+On Windows: `rsa -g keys/<key file> -p 300 -e 20`
 
-This will make two files: `<key file>` and `<key file>.pub`
+This will make two files: `keys/<key file>` and `keys/<key file>.pub`
 
 `-p 300` specifies the size/number of digits of one of the primes generated (the other one has this size + 3 to make factoring harder). `-e 20` specifies the size of the public key constant `e`.
 
@@ -42,16 +42,16 @@ The format of the public key is `(e n)` and the format of the private key is `(d
 
 ### Encrypt
 
-On Linux: `./rsa --encrypt $'<message>' -k <public key file>`
+On Linux: `./rsa --encrypt $'<message>' -k keys/<public key file>`
 
 `$'<message>'` is the Bash string escape syntax so you can include special characters like `!`, `'`, or `"`, for example `$'What\'s that "thing"!!??'`.
 
-On Windows: `rsa --encrypt "<message>" -k <public key file>`
+On Windows: `rsa --encrypt "<message>" -k keys/<public key file>`
 
 ### Decrypt
 
-On Linux: `./rsa --decrypt <numerical message> -k <private key file>`  
-On Windows: `rsa --decrypt <numerical message> -k <private key file>`
+On Linux: `./rsa --decrypt <numerical message> -k keys/<private key file>`  
+On Windows: `rsa --decrypt <numerical message> -k keys/<private key file>`
 
 ### ASCII Encode only
 
@@ -65,13 +65,13 @@ On Windows: `rsa --decode <ascii message>`
 
 ### Encrypt without encode
 
-On Linux: `./rsa --encrypt-no-encode <numerical message> -k <public key file>`  
-On Windows: `rsa --encrypt-no-encode <numerical message> -k <public key file>`
+On Linux: `./rsa --encrypt-no-encode <numerical message> -k keys/<public key file>`  
+On Windows: `rsa --encrypt-no-encode <numerical message> -k keys/<public key file>`
 
 ### Decrypt without decode
 
-On Linux: `./rsa --decrypt-no-decode <numerical message> -k <private key file>`  
-On Windows: `rsa --decrypt-no-decode <numerical message> -k <private key file>`
+On Linux: `./rsa --decrypt-no-decode <numerical message> -k keys/<private key file>`  
+On Windows: `rsa --decrypt-no-decode <numerical message> -k keys/<private key file>`
 
 ## Run tests
 
