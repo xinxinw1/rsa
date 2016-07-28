@@ -318,9 +318,20 @@
 
 ;; Random number functions
 
+; this is to deal with the random state being saved in the executable
+; making the generated "random" numbers being the same every time the executable is run
+(defparameter *random-state-init* nil)
+(defparameter *fresh-random-state* nil)
+
+(defun random-num (max)
+  (when (not *random-state-init*)
+    (setq *fresh-random-state* (make-random-state t))
+    (setq *random-state-init* t))
+  (random max *fresh-random-state*))
+
 ; generates a random number in [min, max)
 (defun random-range (min max)
-  (+ min (random (- max min))))
+  (+ min (random-num (- max min))))
 
 (defun random-size (s)
   (random-range (expt 10 (- s 1)) (expt 10 s)))
