@@ -25,6 +25,8 @@ After compiling:
 
 This will make two files: `<key file>` and `<key file>.pub`
 
+`-p 300` specifies the size/number of digits of one of the primes generated (the other one has this size + 3 to make factoring harder). `-e 20` specifies the size of the public key constant `e`.
+
 The format of the public key is `(e n)` and the format of the private key is `(d n)`
 
 ### Encrypt
